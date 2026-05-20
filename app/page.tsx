@@ -1,65 +1,119 @@
-import Image from "next/image";
+// app/page.tsx
+"use client";
+
+import { useState } from "react";
+import { extractPdfText } from "@/lib/extractPdfText";
+import { ContractAnalysis } from "@/lib/types";
+import UploadZone from "@/components/UploadZone";
+import ResultsPanel from "@/components/ResultsPanel";
 
 export default function Home() {
+  const [result, setResult]     = useState<ContractAnalysis | null>(null);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+  const [progress, setProgress] = useState("");
+
+  async function handleFile(file: File) {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      // Step 1 — Extract text from the PDF in the browser
+      setProgress("Extracting text from PDF…");
+      const text = file.type === "application/pdf"
+        ? await extractPdfText(file)
+        : await file.text();
+
+      if (text.trim().length < 100) {
+        throw new Error("Could not extract enough text from this file.");
+      }
+
+      // Step 2 — Send to your API route and stream Claude's response
+      setProgress("Analyzing with Claude…");
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contractText: text }),
+      });
+
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+
+      // Step 3 — Collect the streamed tokens into one string
+      const reader  = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+      }
+
+      // Step 4 — Parse the JSON and store the result
+      const clean = accumulated.replace(/```json|```/g, "").trim();
+      const parsed: ContractAnalysis = JSON.parse(clean);
+      setResult(parsed);
+
+    } catch (e: any) {
+      setError("Analysis failed: " + (e.message ?? "Unknown error"));
+    } finally {
+      setLoading(false);
+      setProgress("");
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="min-h-screen bg-stone-50">
+
+      {/* Navigation bar */}
+      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-stone-200 px-8 py-4 flex items-center justify-between">
+        <span className="font-bold text-stone-900 text-lg">⚖ ContractClear</span>
+        <span className="text-xs text-stone-400 font-mono">Powered by Claude</span>
+      </header>
+
+      <div className="max-w-3xl mx-auto px-6 py-12">
+
+        {/* Hero — only shows before any result */}
+        {!result && !loading && (
+          <div className="text-center mb-10">
+            <h1 className="text-4xl font-bold text-stone-900 mb-3 tracking-tight">
+              Understand any contract<br />in plain English
+            </h1>
+            <p className="text-stone-500 text-lg">
+              Upload a PDF. Get a risk analysis, key clauses explained, and a clear recommendation.
+            </p>
+          </div>
+        )}
+
+        {/* Upload zone — hides once results are shown */}
+        {!result && (
+          <UploadZone onFile={handleFile} loading={loading} />
+        )}
+
+        {/* Loading spinner */}
+        {loading && (
+          <div className="text-center py-24">
+            <div className="inline-block w-8 h-8 border-2 border-stone-200 border-t-stone-600 rounded-full animate-spin mb-4" />
+            <p className="text-stone-500 text-sm font-mono">{progress}</p>
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Results */}
+        {result && (
+          <ResultsPanel data={result} onReset={() => setResult(null)} />
+        )}
+
+      </div>
+    </main>
   );
-}
+} 
