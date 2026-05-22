@@ -1,0 +1,15 @@
+NON-DISCLOSURE AGREEMENT
+
+This Agreement is between Acme Corp ("Disclosing Party")
+and John Doe ("Receiving Party"), entered January 1, 2025.
+
+1. CONFIDENTIALITY: All business, technical, and financial
+info stays confidential indefinitely.
+
+2. NON-COMPETE: No work for any competitor within 50 miles
+for 5 years after termination.
+
+3. PENALTIES: Breach results in $500,000 liquidated damages
+regardless of actual harm.
+
+4. GOVERNING LAW: Laws of Delaware.

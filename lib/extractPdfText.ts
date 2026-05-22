@@ -1,20 +1,14 @@
 // lib/extractPdfText.ts
 
-let pdfjsLib: any;
-
-async function getPdfjs() {
-  if (!pdfjsLib) {
-    pdfjsLib = await import("pdfjs-dist");
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
-  }
-  return pdfjsLib;
-}
-
 export async function extractPdfText(file: File): Promise<string> {
-  const pdfjs = await getPdfjs();
+  // Dynamically import PDF.js — only runs in the browser, never on the server
+  const pdfjsLib = await import("pdfjs-dist");
+
+  // Point to the worker file you copied to /public in Step 2
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   const pages: string[] = [];
 
   for (let i = 1; i <= pdf.numPages; i++) {
