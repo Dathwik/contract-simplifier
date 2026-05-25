@@ -1,5 +1,7 @@
 # Contract Simplifier
 
+**Live:** [contract-simplifier-three.vercel.app](https://contract-simplifier-three.vercel.app)
+
 An AI-powered web application that transforms complex legal contracts into clear, plain-language summaries — so you understand what you're signing before you sign it.
 
 Built with [Next.js](https://nextjs.org), [Claude AI](https://www.anthropic.com/claude) (Anthropic), and [PDF.js](https://mozilla.github.io/pdf.js/).
@@ -91,7 +93,9 @@ contract-simplifier/
 
 ## Deployment
 
-The easiest way to deploy is via [Vercel](https://vercel.com):
+The app is deployed on [Vercel](https://vercel.com) at **[contract-simplifier-three.vercel.app](https://contract-simplifier-three.vercel.app)**.
+
+To deploy your own instance:
 
 1. Push your code to GitHub
 2. Import the repository in Vercel
