@@ -69,13 +69,27 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```
 contract-simplifier/
 ├── app/
-│   ├── layout.tsx        # Root layout with metadata
-│   ├── page.tsx          # Main application page
-│   └── globals.css       # Global styles
-├── public/               # Static assets
-├── next.config.ts        # Next.js configuration
-├── tailwind.config       # Tailwind CSS configuration
-└── tsconfig.json         # TypeScript configuration
+│   ├── api/
+│   │   └── analyze/
+│   │       └── route.ts      # POST endpoint — streams Claude analysis response
+│   ├── globals.css            # Global Tailwind styles
+│   ├── layout.tsx             # Root layout with metadata and fonts
+│   └── page.tsx               # Main page — upload flow, streaming, state management
+├── components/
+│   ├── ClauseCard.tsx         # Accordion card showing original vs plain-English clause
+│   ├── ResultsPanel.tsx       # Full analysis view — summary, clauses, risk, recommendation
+│   ├── RiskBadge.tsx          # Color-coded pill badge for low / medium / high risk
+│   └── UploadZone.tsx         # Drag-and-drop / click-to-browse file input
+├── lib/
+│   ├── extractPdfText.ts      # Client-side PDF text extraction using pdfjs-dist
+│   ├── prompt.ts              # Claude system prompt builder
+│   └── types.ts               # TypeScript types — Clause, ContractAnalysis, RiskLevel
+├── public/
+│   └── pdf.worker.min.js      # PDF.js worker (served statically, required by pdfjs-dist)
+├── empty-module.ts            # Turbopack alias stub for the canvas package
+├── next.config.ts             # Next.js + Turbopack config with canvas alias
+├── test-contract.txt          # Sample NDA for local testing
+└── tsconfig.json              # TypeScript configuration
 ```
 
 ---
